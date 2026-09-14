@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>J & D Institute of Nursing Library</title>
+  <script>
+    (function() {
+      function sendLog(type, args) {
+        fetch('/api/logs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: type, args: Array.from(args).map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)) })
+        }).catch(() => {});
+      }
+      window.onerror = function(message, source, lineno, colno, error) {
+        sendLog('error', [message, source, lineno, colno, error ? error.stack : '']);
+      };
+      window.onunhandledrejection = function(event) {
+        sendLog('promise_rejection', [event.reason ? event.reason.toString() : '']);
+      };
+      const orgLog = console.log;
+      console.log = function() {
+        orgLog.apply(console, arguments);
+        sendLog('log', arguments);
+      };
+      const orgError = console.error;
+      console.error = function() {
+        orgError.apply(console, arguments);
+        sendLog('console_error', arguments);
+      };
+    })();
+  </script>
+  <!-- Compiled Offline Tailwind CSS will be linked here -->
+  <link rel="icon" type="image/png" href="img/logo.png">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Inline base styles in case css builds are pending */
+    [v-cloak] { display: none; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col antialiased">
+
+  <!-- ==================================================
+       PRINT SECTION (Only visible during print)
+       ================================================== -->
+  <div id="print-section" class="print-only bg-white text-black p-8">
+    <!-- Centered Letterhead -->
+    <div id="print-letterhead" class="text-center mb-8 border-b-2 border-slate-900 pb-4">
+      <div class="flex justify-center items-center gap-5 mb-2">
+        <img src="img/logo.png" alt="J & D Institute of Nursing Logo" width="72" height="72" style="width: 72px; height: 72px; min-width: 72px; max-width: 72px; object-fit: contain;" class="rounded-full flex-shrink-0">
+        <div class="text-left">
+          <h1 class="text-2xl font-black tracking-wide uppercase text-slate-900">J & D INSTITUTE OF NURSING</h1>
+          <p class="text-xs font-semibold text-slate-700 mt-0.5">Bansari Road, Dabhodiya, Pipodara, Ta. Mangrol, Di. Surat, 394110, Gujarat | Affiliated to VNSGU</p>
+          <p class="text-[11px] text-teal-800 font-bold uppercase tracking-wider mt-1">Library Department • Official Document</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Printable Content Container -->
+    <div id="print-content"></div>
+
+    <!-- Librarian Signature Footer -->
+    <div id="print-footer" class="mt-20 flex justify-between items-end border-t border-slate-200 pt-8">
+      <div>
+        <p class="text-xs text-slate-400">Generated on: <span id="print-timestamp">-</span></p>
+        <p class="text-xs text-slate-400">J&D Library Management System (Offline)</p>
+      </div>
+      <div class="text-center border-t border-slate-900 w-48 pt-2">
+        <p class="text-sm font-bold text-slate-800">Authorized Librarian</p>
+        <p class="text-xs text-slate-600">J & D Institute of Nursing</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================
+       MAIN APP LAYOUT (Hidden during print)
+       ================================================== -->
+  <div id="main-layout" class="no-print flex-grow flex flex-col">
+    
+    <!-- Sticky Top Control Bar -->
+    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-6 py-4 flex items-center justify-between shadow-lg">
+      <div class="flex items-center gap-3.5">
+        <!-- Logo -->
+        <img src="img/logo.png" alt="J & D Institute Logo" width="48" height="48" style="width: 48px; height: 48px; min-width: 48px; max-width: 48px; object-fit: contain;" class="rounded-full shadow-md ring-2 ring-teal-500/20 bg-slate-800 flex-shrink-0">
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base font-bold text-white tracking-wide">J & D Institute of Nursing</h1>
+            <span class="text-[10px] bg-teal-500/20 text-teal-300 font-bold px-2 py-0.5 rounded-full border border-teal-500/30 uppercase tracking-wider">Library Portal</span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-normal">Bansari Road, Dabhodiya, Pipodara, Ta. Mangrol, Di. Surat, 394110, Gujarat | Affiliated to VNSGU</p>
+        </div>
+      </div>
+
+      <!-- Controls Group -->
+      <div class="flex items-center gap-4">
+        <!-- Academic Year Global Selector -->
+        <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+          <span class="text-xs text-slate-400 font-medium">Session:</span>
+          <select id="global-academic-year" class="bg-transparent text-sm font-bold text-white focus:outline-none cursor-pointer">
+            <!-- Populated via API -->
+          </select>
+          <button id="btn-new-ay" class="text-teal-400 hover:text-teal-300 p-1 rounded transition-colors" title="Start New Session">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+          </button>
+        </div>
+
+        <!-- Theme Toggle Button -->
+        <button id="btn-toggle-theme" class="bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 p-2.5 rounded-xl transition-all shadow-md active:scale-95" title="Toggle Light/Dark Mode">
+          <svg id="theme-icon-moon" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+          <svg id="theme-icon-sun" class="w-4 h-4 text-teal-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464-4.95a1 1 0 111.414 1.414L14.14 5.636a1 1 0 11-1.414-1.414l.793-.793zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zm-4.636 4.95a1 1 0 10-1.414-1.414l-.793.793a1 1 0 101.414 1.414l.793-.793zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.636 5.636a1 1 0 10-1.414-1.414l-.793.793a1 1 0 101.414 1.414l.793-.793zM4 10a1 1 0 01-1 1H2a1 1 0 110-2h1a1 1 0 011 1z" clip-rule="evenodd"></path></svg>
+        </button>
+
+        <!-- One-Click SQLite Backup -->
+        <button id="btn-backup" class="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-teal-500/20 active:scale-95 transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+          One-Click USB Backup
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="flex flex-row flex-grow">
+      
+      <!-- Side Navigation Panel -->
+      <aside class="w-64 bg-slate-900 border-r border-slate-800 p-4 space-y-2 flex flex-col shrink-0">
+        <button data-tab="circulation" class="tab-link active flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all">
+          <svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+          Circulation Desk
+        </button>
+        <button data-tab="students" class="tab-link flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+          Student Registry
+        </button>
+        <button data-tab="books" class="tab-link flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+          Book Inventory
+        </button>
+        <button data-tab="journals" class="tab-link flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 4a2 2 0 00-2-2v3a2 2 0 002-2zM9 9h1.5m2.25 0H15m-5.25 4h5.25"></path></svg>
+          Journals & Periodicals
+        </button>
+        <button data-tab="reports" class="tab-link flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          Reports & Register
+        </button>
+        <button data-tab="rules" class="tab-link flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all">
+          <svg class="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          Rules & Regulations
+        </button>
+        <div class="flex-grow"></div>
+        
+        <!-- Offline Status Footer -->
+        <div class="p-3 bg-slate-800/40 rounded-xl border border-slate-800 text-center">
+          <div class="flex items-center justify-center gap-2 text-xs text-emerald-400 font-bold">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            SYSTEM LOCAL & OFFLINE
+          </div>
+          <p class="text-[10px] text-slate-500 mt-1">Database: library.db</p>
+        </div>
+      </aside>
+
+      <!-- Main Workspace -->
+      <main class="flex-grow p-8 overflow-y-auto max-w-7xl mx-auto w-full">
+        
+        <!-- Notification Alert Panel -->
+        <div id="notification-banner" class="hidden mb-6 p-4 rounded-xl border flex items-center justify-between shadow-md transition-all">
+          <div class="flex items-center gap-3">
+            <span id="notification-icon"></span>
+            <p id="notification-msg" class="text-sm font-semibold"></p>
+          </div>
+          <button id="btn-close-notification" class="text-slate-400 hover:text-white">&times;</button>
+        </div>
+
+        <!-- ==========================================
+             TAB 1: CIRCULATION desk
+             ========================================== -->
+        <div id="panel-circulation" class="tab-panel space-y-6">
+          <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-bold tracking-tight text-white">Circulation Desk</h2>
+            <div class="text-sm text-slate-400 font-semibold" id="desk-current-date">Date: 2026-08-06</div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Issue Book Panel -->
+            <div class="bg-slate-800/50 border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-4">
+              <div class="flex items-center gap-2 border-b border-slate-700 pb-3">
+                <div class="bg-teal-500/20 p-2 rounded-lg text-teal-400">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-white">Book Outward (Issue Book)</h3>
+              </div>
+
+              <!-- Student Lookup Section -->
+              <div class="space-y-3">
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide">1. Student Identification</label>
+                <div class="relative">
+                  <input type="text" id="issue-student-search" placeholder="Type Name, Enrollment No or Mobile..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-slate-500">
+                  <!-- Search Results Box -->
+                  <div id="issue-student-results" class="hidden absolute top-full left-0 right-0 mt-2 max-h-60 overflow-y-auto bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 divide-y divide-slate-800"></div>
+                </div>
+                <!-- Selected Student Card -->
+                <div id="selected-student-card" class="hidden bg-slate-900/80 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+                  <div>
+                    <h4 id="sel-student-name" class="font-bold text-white text-sm">John Doe</h4>
+                    <p id="sel-student-meta" class="text-xs text-slate-400 mt-0.5">B.Sc. Nursing | JD-2026-001</p>
+                    <div class="mt-2 flex items-center gap-3">
+                      <span id="sel-student-quota" class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold">Loans: 0/3</span>
+                      <span id="sel-student-mobile" class="text-xs text-slate-500">Mob: 9876543210</span>
+                    </div>
+                  </div>
+                  <button id="btn-clear-sel-student" class="text-slate-400 hover:text-red-400 p-1">&times; Clear</button>
+                </div>
+              </div>
+
+              <!-- Book scan lookup -->
+              <div class="space-y-3 pt-2">
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide">2. Search Book (Accession No, Title, Author, Publisher)</label>
+                <div class="relative">
+                  <input type="text" id="issue-book-accession" placeholder="Type or scan Accession No, Title, Author, Publisher..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-slate-500">
+                  <!-- Search Results Box -->
+                  <div id="issue-book-results" class="hidden absolute top-full left-0 right-0 mt-2 max-h-60 overflow-y-auto bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 divide-y divide-slate-800"></div>
+                </div>
+                <!-- Verified Book Card -->
+                <div id="verified-book-card" class="hidden bg-slate-900/80 border border-slate-800 rounded-xl p-4 relative">
+                  <h4 id="ver-book-title" class="font-bold text-white text-sm">Pathology Book</h4>
+                  <p id="ver-book-authors" class="text-xs text-slate-400 mt-0.5">By Author</p>
+                  <p class="text-xs text-slate-500 mt-1">Location: <span id="ver-book-location">-</span> | Status: <span id="ver-book-status" class="font-bold">Available</span></p>
+                  <button id="btn-clear-verified-book" class="absolute top-4 right-4 text-xs text-slate-400 hover:text-red-400">&times; Clear</button>
+                </div>
+              </div>
+
+              <!-- Loan Terms -->
+              <div class="pt-4 border-t border-slate-700/60 flex items-center justify-between text-xs text-slate-400">
+                <div>Issue Date: <strong class="text-white" id="issue-date-label">-</strong></div>
+                <div>Due Date: <strong class="text-teal-400" id="due-date-label">-</strong></div>
+              </div>
+
+              <button id="btn-issue-confirm" disabled class="w-full py-3.5 bg-slate-700 text-slate-400 cursor-not-allowed rounded-xl text-sm font-bold tracking-wide shadow-md active:scale-98 transition-all">
+                Confirm Book Outward
+              </button>
+            </div>
+
+            <!-- Returns & Renewals Counter -->
+            <div class="bg-slate-800/50 border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-4">
+              <div class="flex items-center gap-2 border-b border-slate-700 pb-3">
+                <div class="bg-teal-500/20 p-2 rounded-lg text-teal-400">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-white">Book Inward (Return / Renew)</h3>
+              </div>
+
+              <div class="space-y-3">
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide">Search Active Loan (Accession, Student, Title, Author, Publisher)</label>
+                <div class="relative">
+                  <input type="text" id="return-book-accession" placeholder="Type or scan Accession No, Student Name, Book Title, Author..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-slate-500">
+                  <!-- Search Results Box -->
+                  <div id="return-loan-results" class="hidden absolute top-full left-0 right-0 mt-2 max-h-60 overflow-y-auto bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 divide-y divide-slate-800"></div>
+                </div>
+              </div>
+
+              <!-- Active Loan Detail View -->
+              <div id="return-loan-details" class="hidden bg-slate-900/60 border border-slate-800 rounded-xl p-5 space-y-4">
+                <div class="flex justify-between border-b border-slate-800 pb-3">
+                  <div>
+                    <h4 id="ret-book-title" class="font-bold text-white text-sm">Pathology Book</h4>
+                    <p id="ret-book-acc" class="text-xs text-slate-400">JD-LIB-0001</p>
+                  </div>
+                  <div class="text-right">
+                    <span id="ret-renewal-badge" class="inline-block bg-slate-800 text-slate-300 text-xs px-2.5 py-0.5 rounded-full font-bold">Renewals: 0/3</span>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <span class="block text-slate-500">Issued To:</span>
+                    <strong id="ret-student-name" class="text-white">Aarav Mehta</strong>
+                    <span id="ret-student-enroll" class="block text-slate-400">JD-2026-001</span>
+                  </div>
+                  <div>
+                    <span class="block text-slate-500">Borrow Date:</span>
+                    <strong id="ret-issue-date" class="text-white">2026-07-01</strong>
+                    <span class="block text-slate-500 mt-1">Due Date:</span>
+                    <strong id="ret-due-date" class="text-teal-400">2026-07-15</strong>
+                  </div>
+                </div>
+
+                <!-- Late Penalty Dynamic Box -->
+                <div id="ret-overdue-box" class="bg-red-950/40 border border-red-900/50 rounded-lg p-3.5 flex items-center justify-between text-xs">
+                  <div>
+                    <span class="block font-semibold text-red-400">Overdue Penalty Alert</span>
+                    <span id="ret-overdue-days" class="text-slate-400">0 Days Overdue * ₹10/day</span>
+                  </div>
+                  <div id="ret-fine-total" class="text-red-400 font-extrabold text-lg">₹0</div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 pt-2">
+                  <!-- Return Actions -->
+                  <button id="btn-return-action" class="py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold tracking-wide shadow-md transition-all">
+                    Return Book
+                  </button>
+                  <button id="btn-renew-action" class="py-3 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 rounded-xl text-xs font-bold tracking-wide transition-all">
+                    Renew (Extend 14d)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 2: STUDENT REGISTRY
+             ========================================== -->
+        <div id="panel-students" class="tab-panel hidden space-y-6">
+          <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight text-white">Student Registry</h2>
+              <p class="text-xs text-slate-400 mt-1">Manage enrollments, borrowing quotas, and clearances</p>
+            </div>
+            
+            <div class="flex gap-2">
+              <button id="btn-import-students-modal" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                Bulk Import CSV
+              </button>
+              <button id="btn-new-student-modal" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Register Student
+              </button>
+            </div>
+          </div>
+
+          <!-- Directory Search Filters -->
+          <div class="bg-slate-800/40 border border-slate-800 rounded-2xl p-4 flex gap-4">
+            <div class="flex-grow relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              </span>
+              <input type="text" id="students-search-input" placeholder="Search by Name, Enrollment Number, or Mobile Number..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-slate-500">
+            </div>
+          </div>
+
+          <!-- Student Grid/Table -->
+          <div class="bg-slate-800/30 border border-slate-850 rounded-2xl overflow-hidden shadow-xl">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead class="bg-slate-800/80 text-xs font-bold text-slate-400 uppercase border-b border-slate-700/80">
+                  <tr>
+                    <th class="px-6 py-4">Enrollment ID</th>
+                    <th class="px-6 py-4">Student Name</th>
+                    <th class="px-6 py-4">Course</th>
+                    <th class="px-6 py-4">Div / Batch</th>
+                    <th class="px-6 py-4">Mobile</th>
+                    <th class="px-6 py-4">Status</th>
+                    <th class="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="students-table-body" class="divide-y divide-slate-800">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 3: BOOK CATALOG & INVENTORY
+             ========================================== -->
+        <div id="panel-books" class="tab-panel hidden space-y-6">
+          <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight text-white">Book Inventory</h2>
+              <p class="text-xs text-slate-400 mt-1">Manage primary textbooks, rack locations, and availability statuses</p>
+            </div>
+            
+            <div class="flex gap-2">
+              <button id="btn-import-books-modal" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                Bulk Import CSV
+              </button>
+              <button id="btn-new-book-modal" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Add Manual Book
+              </button>
+            </div>
+          </div>
+
+          <!-- Catalog Search -->
+          <div class="bg-slate-800/40 border border-slate-800 rounded-2xl p-4 flex gap-4">
+            <div class="flex-grow relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              </span>
+              <input type="text" id="books-search-input" placeholder="Search Master Catalog by Title, Author, Accession No, ISBN, Specialty..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-slate-500">
+            </div>
+          </div>
+
+          <!-- Book Inventory Table -->
+          <div class="bg-slate-800/30 border border-slate-850 rounded-2xl overflow-hidden shadow-xl">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead class="bg-slate-800/80 text-xs font-bold text-slate-400 uppercase border-b border-slate-700/80">
+                  <tr>
+                    <th class="px-6 py-4">Accession / Call No</th>
+                    <th class="px-6 py-4">Title & Edition</th>
+                    <th class="px-6 py-4">Primary Author</th>
+                    <th class="px-6 py-4">Specialty</th>
+                    <th class="px-6 py-4">Location</th>
+                    <th class="px-6 py-4">Status</th>
+                    <th class="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="books-table-body" class="divide-y divide-slate-800">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 4: JOURNALS & PERIODICALS
+             ========================================== -->
+        <div id="panel-journals" class="tab-panel hidden space-y-6">
+          <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight text-white">Journals & Periodicals</h2>
+              <p class="text-xs text-slate-400 mt-1">Track serial subscripts, frequencies, and physical positions</p>
+            </div>
+            
+            <button id="btn-new-journal-modal" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+              New Serial Subscription
+            </button>
+          </div>
+
+          <!-- Journals Table -->
+          <div class="bg-slate-800/30 border border-slate-850 rounded-2xl overflow-hidden shadow-xl">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead class="bg-slate-800/80 text-xs font-bold text-slate-400 uppercase border-b border-slate-700/80">
+                  <tr>
+                    <th class="px-6 py-4">Journal Name</th>
+                    <th class="px-6 py-4">ISSN</th>
+                    <th class="px-6 py-4">Publisher</th>
+                    <th class="px-6 py-4">Frequency</th>
+                    <th class="px-6 py-4">Vol / Issue</th>
+                    <th class="px-6 py-4">Sub Period</th>
+                    <th class="px-6 py-4">Location</th>
+                    <th class="px-6 py-4">Status</th>
+                    <th class="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="journals-table-body" class="divide-y divide-slate-800">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 5: REPORTS & REGISTERS
+             ========================================== -->
+        <div id="panel-reports" class="tab-panel hidden space-y-6">
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight text-white">Reports & Registers</h2>
+            <p class="text-xs text-slate-400 mt-1">Export local registry tables or print official college documents</p>
+          </div>
+
+          <div class="bg-slate-800/40 border border-slate-800 rounded-2xl p-6 shadow-md grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div class="space-y-2">
+              <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide">1. Register/Report Type</label>
+              <select id="reports-type-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500">
+                <option value="accession-register">1. Accession Register Report</option>
+                <option value="issue-return-register">2. Issue & Return Register</option>
+                <option value="author-wise">3. Author-Wise Book List</option>
+                <option value="master-catalog">4. Master Book Catalog</option>
+                <option value="fines-log">5. Penalty & Fine Collection Log</option>
+                <option value="book-labels">7. Book Spine & Pocket Labels (Full Details)</option>
+                <option value="spine-callno-labels">8. Book Spine Edge Stickers (Call Number Only)</option>
+              </select>
+            </div>
+
+            <div id="reports-year-filter-container" class="space-y-2">
+              <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide">2. Academic Session</label>
+              <select id="reports-year-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500">
+                <option value="all">All Sessions</option>
+              </select>
+            </div>
+
+            <div id="reports-month-filter-container" class="space-y-2">
+              <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide">3. Month Filter</label>
+              <select id="reports-month-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500">
+                <option value="all">All Months</option>
+                <option value="01">January</option>
+                <option value="02">February</option>
+                <option value="03">March</option>
+                <option value="04">April</option>
+                <option value="05">May</option>
+                <option value="06">June</option>
+                <option value="07">July</option>
+                <option value="08">August</option>
+                <option value="09">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+            </div>
+
+            <!-- Book Labels Specific Filter Controls (Visible when book-labels is selected) -->
+            <div id="reports-label-filter-container" class="hidden md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="space-y-1">
+                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wide">Acc Range</label>
+                <div class="flex items-center gap-1.5">
+                  <input type="number" id="label-from-acc" placeholder="From" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-teal-500 font-mono" title="Starting Accession Number">
+                  <span class="text-slate-500 font-bold">-</span>
+                  <input type="number" id="label-to-acc" placeholder="To" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-teal-500 font-mono" title="Ending Accession Number">
+                </div>
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wide">Specialty</label>
+                <select id="label-specialty-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-teal-500">
+                  <option value="all">All Specialties</option>
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wide">Search</label>
+                <input type="text" id="label-search-input" placeholder="Call no, title..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-teal-500">
+              </div>
+            </div>
+            
+            <div class="flex gap-2 justify-end">
+              <button id="btn-export-excel" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Export Excel/CSV
+              </button>
+              <button id="btn-print-report" class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                Print Official Document
+              </button>
+            </div>
+          </div>
+
+          <!-- Report Preview Screen -->
+          <div class="bg-slate-800/30 border border-slate-850 rounded-2xl overflow-hidden shadow-xl">
+            <div class="p-4 bg-slate-800/60 border-b border-slate-700 flex justify-between items-center flex-wrap gap-3">
+              <div class="flex items-center gap-3">
+                <span id="report-title-display" class="text-sm font-bold text-white uppercase tracking-wider">Accession Register</span>
+                <span id="report-count-display" class="text-xs text-slate-400 font-semibold">Total Rows: 0</span>
+              </div>
+
+              <!-- View Switcher (Only visible for book-labels) -->
+              <div id="label-view-toggle-container" class="hidden flex items-center bg-slate-900 border border-slate-700 rounded-xl p-0.5">
+                <button id="btn-label-grid-view" class="px-3 py-1.5 rounded-lg text-xs font-bold text-teal-400 bg-slate-800 flex items-center gap-1.5 transition-all">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                  Sticker Grid View
+                </button>
+                <button id="btn-label-table-view" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white flex items-center gap-1.5 transition-all">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                  Table View
+                </button>
+              </div>
+            </div>
+            
+            <!-- Table View Container -->
+            <div id="reports-table-container" class="overflow-x-auto max-h-[500px]">
+              <table class="w-full text-left text-sm" id="reports-preview-table">
+                <thead class="bg-slate-900 text-xs font-bold text-slate-400 uppercase sticky top-0 border-b border-slate-700">
+                  <tr id="reports-table-headers">
+                    <!-- Dynamic headers -->
+                  </tr>
+                </thead>
+                <tbody id="reports-table-body" class="divide-y divide-slate-800">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Sticker Grid View Container (Only shown when book-labels is selected & grid view active) -->
+            <div id="reports-labels-container" class="hidden p-6 max-h-[600px] overflow-y-auto bg-slate-950/40">
+              <div id="reports-labels-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Dynamic label sticker cards -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 6: LIBRARY RULES & POLICIES
+             ========================================== -->
+        <div id="panel-rules" class="tab-panel hidden space-y-6">
+          <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight text-white">Library Rules & Policy Guidelines</h2>
+              <p class="text-xs text-slate-400 mt-1">Official regulations and penalties governing circulation at J & D Institute of Nursing Library</p>
+            </div>
+            
+            <button id="btn-print-rules" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-md active:scale-95">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H9a2 2 0 00-2 2v3a2 2 0 002 2zm5-17V4a2 2 0 012-2h4a2 2 0 012 2v3m-6 0h6"></path></svg>
+              Print Rules Leaflet
+            </button>
+          </div>
+
+          <!-- Printable Rules Block -->
+          <div class="bg-slate-800/30 border border-slate-850 rounded-2xl p-8 max-w-4xl mx-auto shadow-xl" id="printable-rules-doc">
+            <div class="text-center pb-6 border-b border-slate-700/80 mb-6">
+              <div class="flex justify-center items-center gap-4 mb-2">
+                <img src="img/logo.png" alt="J & D Institute Logo" width="56" height="56" style="width: 56px; height: 56px; min-width: 56px; max-width: 56px; object-fit: contain;" class="rounded-full shadow ring-2 ring-teal-500/20 bg-slate-800 flex-shrink-0">
+                <div class="text-left">
+                  <h1 class="text-2xl font-black text-white tracking-wider uppercase">J & D Institute of Nursing</h1>
+                  <p class="text-xs text-slate-400">Bansari Road, Dabhodiya, Pipodara, Ta. Mangrol, Di. Surat, 394110, Gujarat | Affiliated to VNSGU</p>
+                </div>
+              </div>
+              <h2 class="text-sm font-bold text-teal-400 tracking-widest mt-2">OFFICIAL LIBRARY POLICIES & CODE OF CONDUCT</h2>
+              <p class="text-[10px] text-slate-500 font-mono mt-0.5">Document Reference: JD-LIB-RULES-2026</p>
+            </div>
+
+            <div class="space-y-6 text-sm text-slate-300">
+              <div>
+                <h3 class="text-base font-extrabold text-white mb-2 flex items-center gap-2 border-b border-slate-750 pb-1">
+                  <span class="text-teal-400">01.</span> General Borrowing Quotas
+                </h3>
+                <ul class="list-disc pl-5 space-y-1 text-xs">
+                  <li>Students are permitted to borrow a maximum of <strong>three (3) books</strong> concurrently.</li>
+                  <li>No additional books will be issued if the borrowing count is at capacity.</li>
+                  <li>Clearance (No-Dues) is strictly conditional on having zero active loans.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 class="text-base font-extrabold text-white mb-2 flex items-center gap-2 border-b border-slate-750 pb-1">
+                  <span class="text-teal-400">02.</span> Loan Period & Renewal Limits
+                </h3>
+                <ul class="list-disc pl-5 space-y-1 text-xs">
+                  <li>The standard loan period for all textbook copies is <strong>fifteen (15) days</strong>.</li>
+                  <li>A book must be returned or renewed on or before the due date.</li>
+                  <li>A single issue transaction can be renewed for a maximum of <strong>three (3) consecutive cycles</strong>.</li>
+                  <li>Upon reaching the 3rd renewal limit, the book must be returned to the library counter before it can be re-issued.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 class="text-base font-extrabold text-white mb-2 flex items-center gap-2 border-b border-slate-750 pb-1">
+                  <span class="text-teal-400">03.</span> Late Returns & Overdue Penalties
+                </h3>
+                <ul class="list-disc pl-5 space-y-1 text-xs">
+                  <li>Any student failing to return or renew a book after the <strong>15-day period</strong> will incur a penalty.</li>
+                  <li>The overdue penalty is set at a flat rate of <strong>₹10 per day</strong> for each overdue day.</li>
+                  <li>Fines accumulate automatically in the system and must be paid in full or waived by authorized library personnel before a student can be granted a Clearance Certificate.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 class="text-base font-extrabold text-white mb-2 flex items-center gap-2 border-b border-slate-750 pb-1">
+                  <span class="text-teal-400">04.</span> Care of Library Assets
+                </h3>
+                <ul class="list-disc pl-5 space-y-1 text-xs">
+                  <li>Mutilation, underlining, highlighting, or tearing pages of books is strictly forbidden.</li>
+                  <li>In the event of total loss or structural damage, the borrower is liable to replace the volume or pay double the list price.</li>
+                  <li>Academic journals and reference periodicals are strictly for in-library reading and cannot be checked out.</li>
+                </ul>
+              </div>
+
+              <div class="pt-6 border-t border-slate-700/60 flex items-center justify-between text-[11px] text-slate-500">
+                <div>Approved By: Principal, J & D Institute</div>
+                <div>Effective Date: Academic Session 2026-2027</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ==================================================
+       MODALS OVERLAYS
+       ================================================== -->
+
+  <!-- Modal: Create Academic Year -->
+  <div id="modal-ay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+      <h3 class="text-lg font-bold text-white">Create Academic Year</h3>
+      <div class="space-y-2">
+        <label class="block text-xs text-slate-400 font-bold uppercase">Session Name</label>
+        <input type="text" id="input-ay-name" placeholder="e.g. 2026–2027" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500">
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="btn-close-ay" class="px-4 py-2 bg-slate-750 border border-slate-700 hover:bg-slate-700 text-xs font-bold rounded-xl transition-all">Cancel</button>
+        <button id="btn-save-ay" class="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition-all">Create Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Individual Student Profile -->
+  <div id="modal-student-profile" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-4xl p-6 shadow-2xl space-y-6 my-8">
+      <div class="flex justify-between items-start border-b border-slate-700 pb-4">
+        <div>
+          <h3 id="prof-name" class="text-xl font-bold text-white">Aarav Mehta</h3>
+          <p id="prof-meta" class="text-xs text-slate-400 mt-1">Enrollment ID: <span class="font-semibold text-white" id="prof-enrollment">-</span> | Course: <span class="font-semibold text-white" id="prof-course">-</span></p>
+        </div>
+        <div class="flex gap-2">
+          <button id="btn-print-nodues" class="bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            Print No-Dues Certificate
+          </button>
+          <button id="btn-close-profile" class="text-slate-400 hover:text-white text-2xl font-bold px-2">&times;</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-slate-900/60 p-4 rounded-xl space-y-1.5 text-xs border border-slate-800">
+          <span class="block text-slate-500 font-bold uppercase tracking-wider">Division / Section</span>
+          <span id="prof-division" class="text-sm font-semibold text-white">-</span>
+        </div>
+        <div class="bg-slate-900/60 p-4 rounded-xl space-y-1.5 text-xs border border-slate-800">
+          <span class="block text-slate-500 font-bold uppercase tracking-wider">Mobile Contact</span>
+          <span id="prof-mobile" class="text-sm font-semibold text-white">-</span>
+        </div>
+        <div class="bg-slate-900/60 p-4 rounded-xl space-y-1.5 text-xs border border-slate-800">
+          <span class="block text-slate-500 font-bold uppercase tracking-wider">Record Status</span>
+          <span id="prof-status" class="text-sm font-semibold text-white">-</span>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Active Borrowings Table -->
+        <div>
+          <h4 class="text-sm font-bold text-teal-400 uppercase tracking-wide mb-2">Active Borrowed Books</h4>
+          <div class="bg-slate-900/80 rounded-xl overflow-hidden border border-slate-800">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-800/80 text-slate-400 font-bold uppercase">
+                <tr>
+                  <th class="px-4 py-3">Accession No</th>
+                  <th class="px-4 py-3">Book Title</th>
+                  <th class="px-4 py-3">Issue Date</th>
+                  <th class="px-4 py-3">Due Date</th>
+                  <th class="px-4 py-3">Overdue Fines</th>
+                  <th class="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="prof-active-loans" class="divide-y divide-slate-800">
+                <!-- Dynamic active loans -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Overdue and Fine Ledger -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="bg-slate-900/40 border border-slate-800 p-4 rounded-xl space-y-3">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800 pb-2">Fine Collection Ledger</h4>
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="bg-slate-800/80 p-3 rounded-lg">
+                <span class="block text-[10px] text-slate-400 font-semibold uppercase">Paid</span>
+                <span id="prof-fine-paid" class="text-sm font-black text-emerald-400">₹0</span>
+              </div>
+              <div class="bg-slate-800/80 p-3 rounded-lg">
+                <span class="block text-[10px] text-slate-400 font-semibold uppercase">Pending</span>
+                <span id="prof-fine-pending" class="text-sm font-black text-red-400">₹0</span>
+              </div>
+              <div class="bg-slate-800/80 p-3 rounded-lg">
+                <span class="block text-[10px] text-slate-400 font-semibold uppercase">Waived</span>
+                <span id="prof-fine-waived" class="text-sm font-black text-slate-300">₹0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/40 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
+            <div>
+              <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800 pb-2">Library Clearances</h4>
+              <p class="text-xs text-slate-400 mt-2">No-Dues certificates require all active borrowing quotas to be returned and all late penalties to be fully paid or waived.</p>
+            </div>
+            <div id="clearance-status-box" class="mt-3 p-3 rounded-lg text-xs font-bold flex items-center justify-between">
+              <!-- Dynamic Clearance Badge -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Loan History Register -->
+        <div>
+          <h4 class="text-sm font-bold text-slate-400 uppercase tracking-wide mb-2">Past Borrowing History</h4>
+          <div class="bg-slate-900/80 rounded-xl overflow-hidden border border-slate-800 max-h-40 overflow-y-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-800/80 text-slate-400 font-bold uppercase sticky top-0">
+                <tr>
+                  <th class="px-4 py-3">Accession No</th>
+                  <th class="px-4 py-3">Book Title</th>
+                  <th class="px-4 py-3">Issue Date</th>
+                  <th class="px-4 py-3">Return Date</th>
+                  <th class="px-4 py-3">Penalty Paid/Waived</th>
+                </tr>
+              </thead>
+              <tbody id="prof-history-loans" class="divide-y divide-slate-800">
+                <!-- Dynamic history -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Fine Overdue Pay/Waive Action -->
+  <div id="modal-fine-pay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+      <h3 class="text-lg font-bold text-white">Record Penalty Settlement</h3>
+      <div class="p-3 bg-red-950/40 border border-red-900/50 rounded-lg text-xs flex justify-between items-center">
+        <span class="text-slate-300">Pending Overdue Penalty Amount:</span>
+        <strong id="fine-settle-amount" class="text-red-400 text-lg font-black">₹0</strong>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <label class="block font-bold text-slate-400 uppercase">Settlement Action</label>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="bg-slate-900 border border-slate-700 rounded-xl p-3 flex items-center gap-2 cursor-pointer focus-within:border-teal-500">
+            <input type="radio" name="settle-action" value="Paid" checked class="text-teal-500 focus:ring-0">
+            <div>
+              <strong class="block text-white">Fine Paid</strong>
+              <span class="text-[10px] text-slate-400">Cash received</span>
+            </div>
+          </label>
+          <label class="bg-slate-900 border border-slate-700 rounded-xl p-3 flex items-center gap-2 cursor-pointer focus-within:border-teal-500">
+            <input type="radio" name="settle-action" value="Waived" class="text-teal-500 focus:ring-0">
+            <div>
+              <strong class="block text-white">Waive Fine</strong>
+              <span class="text-[10px] text-slate-400">Librarian exemption</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="space-y-2 text-xs">
+        <label class="block font-bold text-slate-400 uppercase">Librarian Notes</label>
+        <textarea id="fine-settle-notes" rows="2" placeholder="Exemption reason or receipt details..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500"></textarea>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="btn-close-fine" class="px-4 py-2 bg-slate-750 border border-slate-700 hover:bg-slate-700 text-xs font-bold rounded-xl text-white">Cancel</button>
+        <button id="btn-confirm-fine" class="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl">Confirm Settlement</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Bulk Student Import -->
+  <div id="modal-import-students" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 class="text-lg font-bold text-white">Bulk Student Enrollment (Excel / CSV)</h3>
+        <button id="btn-close-import-students" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+      
+      <div class="space-y-3">
+        <label class="block text-xs font-bold text-slate-400 uppercase text-teal-400">Option A: Upload Excel File (.xlsx, .xls)</label>
+        <input type="file" id="import-students-file" accept=".xlsx, .xls, .csv" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-teal-500">
+        <p class="text-[10px] text-slate-400">Supports column headers like: <code>Name</code>, <code>Code</code>, <code>Course</code>, <code>DivisionName</code>, <code>StudentContactNo</code>.</p>
+      </div>
+
+      <div class="flex items-center gap-2 py-1">
+        <input type="checkbox" id="import-students-overwrite" class="rounded border-slate-700 bg-slate-900 text-teal-500 focus:ring-0">
+        <label for="import-students-overwrite" class="text-xs text-slate-300 font-semibold select-none cursor-pointer">Update details if student is already enrolled (Bulk Edit)</label>
+      </div>
+
+      <div class="relative flex py-1 items-center">
+        <div class="flex-grow border-t border-slate-700"></div>
+        <span class="flex-shrink mx-3 text-slate-500 text-[10px] font-bold uppercase">Or</span>
+        <div class="flex-grow border-t border-slate-700"></div>
+      </div>
+
+      <div class="space-y-3">
+        <label class="block text-xs font-bold text-slate-400 uppercase text-teal-400">Option B: Paste Raw CSV Text</label>
+        <textarea id="import-students-csv-text" rows="4" placeholder="Name,Enrollment,Course,Division,Mobile
+Aarav Mehta,JD-2026-001,B.Sc. Nursing,Division A,9876543210
+Rahul Patel,JD-2026-003,GNM,Batch 1,7654321098" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-teal-500 font-mono"></textarea>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="btn-submit-import-students" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition-all">Process Enrollment Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Bulk Book Import -->
+  <div id="modal-import-books" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 class="text-lg font-bold text-white">Bulk Book Cataloging (Excel / CSV)</h3>
+        <button id="btn-close-import-books" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+      
+      <div class="space-y-3">
+        <label class="block text-xs font-bold text-slate-400 uppercase text-teal-400">Option A: Upload Excel File (.xlsx, .xls)</label>
+        <input type="file" id="import-books-file" accept=".xlsx, .xls, .csv" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-teal-500">
+        <p class="text-[10px] text-slate-400">Supports column headers like: <code>Accession No</code>, <code>Title</code>, <code>Author</code>, <code>Edition</code>, <code>Place & Publishers</code>, <code>Year</code>, <code>Pages</code>, <code>Cost (INR)</code>.</p>
+      </div>
+
+      <div class="relative flex py-1 items-center">
+        <div class="flex-grow border-t border-slate-700"></div>
+        <span class="flex-shrink mx-3 text-slate-500 text-[10px] font-bold uppercase">Or</span>
+        <div class="flex-grow border-t border-slate-700"></div>
+      </div>
+
+      <div class="space-y-3">
+        <label class="block text-xs font-bold text-slate-400 uppercase text-teal-400">Option B: Paste Raw CSV Text</label>
+        <textarea id="import-books-csv-text" rows="4" placeholder="Accession,Title,Authors,Edition,Publisher,Year,ISBN,Specialty,Rack,Shelf,Quantity
+JD-LIB-0009,Nursing Research,Suresh K. Sharma,2nd,Jaypee,2018,9789352701111,Medical-Surgical,Rack 4,Shelf B,5" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-teal-500 font-mono"></textarea>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="btn-submit-import-books" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition-all">Process Book Cataloging</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Register Individual Student / Edit Profile -->
+  <div id="modal-new-student" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 id="student-modal-title" class="text-lg font-bold text-white">Register Student Form</h3>
+        <button id="btn-close-new-student" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+
+      <form id="form-new-student" class="space-y-4 text-xs">
+        <input type="hidden" id="new-student-id">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Full Name</label>
+            <input type="text" id="new-student-name" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Enrollment Number</label>
+            <input type="text" id="new-student-enroll" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Course / Program</label>
+            <select id="new-student-course" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+              <option value="B.Sc. Nursing">B.Sc. Nursing</option>
+              <option value="GNM">GNM</option>
+              <option value="Post Basic B.Sc.">Post Basic B.Sc.</option>
+              <option value="M.Sc. Nursing">M.Sc. Nursing</option>
+            </select>
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Division / Section</label>
+            <input type="text" id="new-student-division" required placeholder="e.g. Division A, Batch 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Mobile Number (10 digits)</label>
+            <input type="text" id="new-student-mobile" required pattern="[0-9]{10}" placeholder="Mandatory contact number" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Initial Status</label>
+            <select id="new-student-status" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+              <option value="Active">Active</option>
+              <option value="On Hold">On Hold</option>
+              <option value="Graduated">Graduated</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" id="btn-submit-student" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-all">Submit Registration</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Book Entry Form -->
+  <div id="modal-new-book" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 id="book-modal-title" class="text-lg font-bold text-white">Manual Book Registry</h3>
+        <button id="btn-close-new-book" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+
+      <form id="form-new-book" class="space-y-4 text-xs">
+        <input type="hidden" id="new-book-id" value="">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Accession Number</label>
+            <input type="text" id="new-book-accession" required placeholder="e.g. JD-LIB-0008" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Book Title</label>
+            <input type="text" id="new-book-title" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Primary Author(s)</label>
+            <input type="text" id="new-book-authors" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Edition</label>
+            <input type="text" id="new-book-edition" required placeholder="e.g. 1st Edition" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Publisher Name</label>
+            <input type="text" id="new-book-publisher" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Publishing Year</label>
+            <input type="number" id="new-book-year" required placeholder="YYYY" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">ISBN</label>
+            <input type="text" id="new-book-isbn" placeholder="Optional ISBN ID" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1" id="new-book-specialty-container">
+            <label class="block text-slate-400 font-bold uppercase">Nursing Specialty / Category</label>
+            <select id="new-book-specialty" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+              <!-- Dynamically populated -->
+            </select>
+            <input type="text" id="new-book-custom-specialty" placeholder="Enter custom specialty name..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500 hidden mt-2">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Rack No</label>
+            <input type="text" id="new-book-rack" required placeholder="e.g. Rack A" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Shelf No</label>
+            <input type="text" id="new-book-shelf" required placeholder="e.g. Shelf 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Status</label>
+            <select id="new-book-status" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+              <option value="Available">Available</option>
+              <option value="Issued">Issued</option>
+              <option value="Under Maintenance/Binding">Under Maintenance/Binding</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">No. of Pages</label>
+            <input type="number" id="new-book-pages" placeholder="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Volume</label>
+            <input type="text" id="new-book-volume" placeholder="e.g. Vol. I" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Cost (₹)</label>
+            <input type="number" step="0.01" id="new-book-cost" placeholder="0.00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Bill No.</label>
+            <input type="text" id="new-book-bill-no" placeholder="Optional Bill ID" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Book Entry Date</label>
+            <input type="date" id="new-book-entry-date" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Call Number</label>
+            <input type="text" id="new-book-call-no" placeholder="e.g. 612.015 K2 A6" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div id="new-book-qty-container" class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Quantity (to add in bulk)</label>
+            <input type="number" id="new-book-qty" required min="1" value="1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+        </div>
+
+        <button type="submit" id="btn-submit-book" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-all">Catalog Book</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add/Edit Journal Entry -->
+  <div id="modal-journal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 id="journal-modal-title" class="text-lg font-bold text-white">New Journal Subscription</h3>
+        <button id="btn-close-journal" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+
+      <form id="form-journal" class="space-y-4 text-xs">
+        <input type="hidden" id="journal-id">
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Journal Name</label>
+            <input type="text" id="journal-name" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">ISSN Code</label>
+            <input type="text" id="journal-issn" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Publisher</label>
+            <input type="text" id="journal-publisher" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Frequency</label>
+            <select id="journal-frequency" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+              <option value="Monthly">Monthly</option>
+              <option value="Bi-monthly">Bi-monthly</option>
+              <option value="Quarterly">Quarterly</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Volume / Issue Number</label>
+            <input type="text" id="journal-volume" required placeholder="e.g. Vol 15, Issue 3" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Subscription Period</label>
+            <input type="text" id="journal-sub-period" required placeholder="e.g. Jan 2026 - Dec 2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Rack No</label>
+            <input type="text" id="journal-rack" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Shelf No</label>
+            <input type="text" id="journal-shelf" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-slate-400 font-bold uppercase">Availability Status</label>
+            <select id="journal-status" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+              <option value="Available">Available</option>
+              <option value="Not Available">Not Available</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-all">Save Subscription</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- SPA Core JavaScript -->
+  <script src="js/app.js"></script>
+</body>
+</html>

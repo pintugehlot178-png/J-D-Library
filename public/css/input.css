@@ -1,0 +1,287 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Additional custom print and layout overrides */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  #print-section, #print-section * {
+    color: #000000 !important;
+    background-color: transparent !important;
+    border-color: #cccccc !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  tr {
+    page-break-inside: avoid;
+  }
+  .print-labels-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+  .print-label-item {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    border: 1px dashed #555555 !important;
+    border-radius: 6px !important;
+    padding: 6px 8px !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    min-height: 125px !important;
+    max-height: 145px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+  .print-spine-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+  .print-spine-item {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    border: 1px dashed #666666 !important;
+    border-radius: 4px !important;
+    padding: 8px 4px !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 68px !important;
+    max-height: 90px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+  }
+}
+
+.print-only {
+  display: none;
+}
+
+.print-labels-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+.print-label-item {
+  border: 1px dashed #555555;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: #ffffff;
+  color: #000000;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 125px;
+  box-sizing: border-box;
+}
+.print-spine-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+.print-spine-item {
+  border: 1px dashed #666666;
+  border-radius: 4px;
+  padding: 8px 4px;
+  background: #ffffff;
+  color: #000000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 68px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* Light Mode Theme Overrides */
+body.light-mode {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+body.light-mode #main-layout,
+body.light-mode main {
+  background-color: #f8fafc !important;
+}
+
+body.light-mode aside {
+  background-color: #ffffff !important;
+  border-right-color: #e2e8f0 !important;
+}
+
+body.light-mode header {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+body.light-mode header h1, 
+body.light-mode header p,
+body.light-mode aside button,
+body.light-mode h2,
+body.light-mode h3,
+body.light-mode h4,
+body.light-mode strong,
+body.light-mode .text-white {
+  color: #0f172a !important;
+}
+
+body.light-mode .bg-slate-800,
+body.light-mode .bg-slate-800\/80,
+body.light-mode .bg-slate-800\/50,
+body.light-mode .bg-slate-800\/40,
+body.light-mode .bg-slate-800\/30,
+body.light-mode .bg-slate-900,
+body.light-mode .bg-slate-900\/80,
+body.light-mode .bg-slate-900\/60,
+body.light-mode .bg-slate-900\/40 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.light-mode .border-slate-700,
+body.light-mode .border-slate-800,
+body.light-mode .border-slate-850,
+body.light-mode .divide-slate-800 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #e2e8f0 !important;
+}
+
+body.light-mode input,
+body.light-mode select,
+body.light-mode textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.light-mode input::placeholder,
+body.light-mode textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+body.light-mode .text-slate-400 {
+  color: #475569 !important;
+}
+
+body.light-mode .text-slate-300,
+body.light-mode .text-slate-350 {
+  color: #334155 !important;
+}
+
+body.light-mode .text-slate-500 {
+  color: #64748b !important;
+}
+
+body.light-mode tr:hover {
+  background-color: #f1f5f9 !important;
+}
+
+body.light-mode thead {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border-bottom-color: #cbd5e1 !important;
+}
+
+body.light-mode .btn-view-profile,
+body.light-mode .tab-link {
+  color: #475569 !important;
+}
+
+body.light-mode .tab-link.active {
+  background-color: rgba(13, 148, 136, 0.1) !important;
+  color: #0d9488 !important;
+}
+
+body.light-mode .tab-link:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+body.light-mode #selected-student-card,
+body.light-mode #verified-book-card,
+body.light-mode #return-loan-details {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.light-mode #issue-student-results,
+body.light-mode #issue-book-results,
+body.light-mode #return-loan-results {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.light-mode #issue-student-results div:hover,
+body.light-mode #issue-book-results div:hover,
+body.light-mode #return-loan-results div:hover {
+  background-color: #f1f5f9 !important;
+}
+
+body.light-mode #modal-new-student > div,
+body.light-mode #modal-new-book > div,
+body.light-mode #modal-journal > div,
+body.light-mode #modal-import-students > div,
+body.light-mode #modal-import-books > div,
+body.light-mode #modal-student-profile > div,
+body.light-mode #modal-fine-pay > div,
+body.light-mode #modal-ay > div {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.light-mode .bg-slate-750 {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.college-logo-nav {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  object-fit: contain !important;
+}
+
+.college-logo-print {
+  width: 72px !important;
+  height: 72px !important;
+  min-width: 72px !important;
+  max-width: 72px !important;
+  object-fit: contain !important;
+}
+
+.college-logo-rules {
+  width: 56px !important;
+  height: 56px !important;
+  min-width: 56px !important;
+  max-width: 56px !important;
+  object-fit: contain !important;
+}
