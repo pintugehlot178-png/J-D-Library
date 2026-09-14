@@ -470,13 +470,40 @@
             </div>
           </div>
 
-          <!-- Catalog Search -->
-          <div class="bg-slate-800/40 border border-slate-800 rounded-2xl p-4 flex gap-4">
-            <div class="flex-grow relative">
-              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-              </span>
-              <input type="text" id="books-search-input" placeholder="Search Master Catalog by Title, Author, Accession No, ISBN, Specialty..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-slate-500">
+          <!-- Catalog Search & Category Filter -->
+          <div class="bg-slate-800/40 border border-slate-800 rounded-2xl p-4 space-y-3">
+            <div class="flex flex-col md:flex-row gap-3">
+              <!-- Search Bar -->
+              <div class="flex-grow relative">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </span>
+                <input type="text" id="books-search-input" placeholder="Search Master Catalog by Title, Author, Accession No, ISBN, Call No..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-slate-500">
+              </div>
+
+              <!-- Category / Specialty Filter Dropdown -->
+              <div class="w-full md:w-80 relative flex-shrink-0">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-teal-400">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                </div>
+                <select id="books-category-filter" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-8 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 cursor-pointer font-medium appearance-none">
+                  <option value="all">All Categories / Specialties</option>
+                  <!-- Dynamically populated with all categories and counts -->
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Category Quick-Filter Pills & Live Count Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-slate-800/80">
+              <div id="books-category-chips" class="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full text-xs no-scrollbar">
+                <!-- Dynamically populated category chips -->
+              </div>
+              <div id="books-count-summary" class="text-[11px] font-bold text-slate-400 shrink-0 bg-slate-900/60 px-2.5 py-1 rounded-lg border border-slate-800">
+                Loading catalog...
+              </div>
             </div>
           </div>
 

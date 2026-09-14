@@ -513,15 +513,27 @@ app.delete('/api/students/:id', async (req, res) => {
 // 3. BOOKS API
 // ==========================================
 app.get('/api/books', async (req, res) => {
-  const { search } = req.query;
+  const { search, category, specialty } = req.query;
+  const filterCategory = category || specialty;
   let query = 'SELECT * FROM books';
   const params = [];
+  const whereClauses = [];
 
-  if (search) {
-    query += ' WHERE (title LIKE ? OR authors LIKE ? OR accession_no LIKE ? OR isbn LIKE ? OR specialty LIKE ? OR publisher LIKE ? OR call_no LIKE ?)';
-    const searchVal = `%${search}%`;
+  if (search && search.trim()) {
+    whereClauses.push('(title LIKE ? OR authors LIKE ? OR accession_no LIKE ? OR isbn LIKE ? OR specialty LIKE ? OR publisher LIKE ? OR call_no LIKE ?)');
+    const searchVal = `%${search.trim()}%`;
     params.push(searchVal, searchVal, searchVal, searchVal, searchVal, searchVal, searchVal);
   }
+
+  if (filterCategory && filterCategory.trim() && filterCategory.toLowerCase() !== 'all') {
+    whereClauses.push('specialty = ?');
+    params.push(filterCategory.trim());
+  }
+
+  if (whereClauses.length > 0) {
+    query += ' WHERE ' + whereClauses.join(' AND ');
+  }
+
   query += ' ORDER BY length(accession_no) ASC, accession_no ASC';
 
   try {
@@ -534,9 +546,18 @@ app.get('/api/books', async (req, res) => {
 
 app.get('/api/books/specialties', async (req, res) => {
   try {
-    const rows = await all('SELECT DISTINCT specialty FROM books ORDER BY specialty ASC');
+    const rows = await all('SELECT DISTINCT specialty FROM books WHERE specialty IS NOT NULL AND specialty != \'\' ORDER BY specialty ASC');
     const dbSpecialties = rows.map(r => r.specialty).filter(s => s && s.trim() !== '');
     res.json(dbSpecialties);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/books/categories-summary', async (req, res) => {
+  try {
+    const rows = await all('SELECT specialty, count(*) as count FROM books WHERE specialty IS NOT NULL AND specialty != \'\' GROUP BY specialty ORDER BY count(*) DESC, specialty ASC');
+    res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

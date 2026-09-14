@@ -308,6 +308,7 @@ function switchTab(tabId) {
   if (tabId === 'students') {
     loadStudents();
   } else if (tabId === 'books') {
+    populateMasterBookCategories();
     loadBooks();
   } else if (tabId === 'journals') {
     loadJournals();
@@ -987,9 +988,20 @@ function setupEventListeners() {
   });
 
   // --- Book Inventory Events ---
-  document.getElementById('books-search-input').addEventListener('input', () => {
-    loadBooks();
-  });
+  const booksSearchEl = document.getElementById('books-search-input');
+  if (booksSearchEl) {
+    booksSearchEl.addEventListener('input', () => {
+      loadBooks();
+    });
+  }
+
+  const booksCategoryFilterEl = document.getElementById('books-category-filter');
+  if (booksCategoryFilterEl) {
+    booksCategoryFilterEl.addEventListener('change', (e) => {
+      updateActiveCategoryChip(e.target.value);
+      loadBooks();
+    });
+  }
 
   document.getElementById('new-book-specialty').addEventListener('change', (e) => {
     const customInput = document.getElementById('new-book-custom-specialty');
@@ -1334,9 +1346,83 @@ function setupEventListeners() {
 
   document.getElementById('btn-print-rules').addEventListener('click', () => {
     const printContent = document.getElementById('print-content');
+    const printLetterhead = document.getElementById('print-letterhead');
+    const printFooter = document.getElementById('print-footer');
+
+    // Ensure official letterhead is visible with rules title
+    if (printLetterhead) {
+      printLetterhead.classList.remove('hidden');
+      printLetterhead.className = 'text-center mb-3 border-b-2 border-slate-900 pb-2';
+    }
+    const printSubheading = document.getElementById('print-subheading');
+    if (printSubheading) {
+      printSubheading.innerText = 'OFFICIAL LIBRARY POLICIES & CODE OF CONDUCT';
+    }
+
+    // Keep footer compact to prevent 2nd page spillover
+    if (printFooter) {
+      printFooter.classList.remove('hidden');
+      printFooter.className = 'mt-5 flex justify-between items-end border-t border-slate-300 pt-2 text-[11px]';
+    }
+
     const now = new Date();
-    document.getElementById('print-timestamp').innerText = now.toLocaleString();
-    printContent.innerHTML = document.getElementById('printable-rules-doc').innerHTML;
+    const timestampEl = document.getElementById('print-timestamp');
+    if (timestampEl) timestampEl.innerText = now.toLocaleString();
+
+    // Clean, structured rules body formatted specifically for print (single page)
+    printContent.innerHTML = `
+      <div style="font-family: system-ui, -apple-system, sans-serif; color: #0f172a; line-height: 1.35; padding: 0 4px;">
+        <div style="text-align: center; margin-bottom: 10px; padding-bottom: 4px; border-bottom: 1px solid #cbd5e1;">
+          <span style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: #0f766e;">Official Regulations & Code of Conduct • Academic Session 2026–2027</span>
+          <span style="font-size: 10px; color: #64748b; font-family: monospace; display: block; margin-top: 1px;">Document Ref: JD-LIB-RULES-2026</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px;">
+          <div style="border-left: 3px solid #0d9488; padding-left: 10px; background: #f8fafc; padding-top: 4px; padding-bottom: 4px; border-radius: 0 4px 4px 0;">
+            <div style="font-weight: 800; font-size: 11.5px; color: #0f172a; margin-bottom: 2px;">01. General Borrowing Quotas</div>
+            <ul style="margin: 0; padding-left: 16px; list-style-type: disc; color: #334155;">
+              <li>Students are permitted to borrow a maximum of <strong>three (3) books</strong> concurrently.</li>
+              <li>No additional books will be issued if the borrowing count is at capacity.</li>
+              <li>Clearance (No-Dues) is strictly conditional on having zero active loans.</li>
+            </ul>
+          </div>
+
+          <div style="border-left: 3px solid #0d9488; padding-left: 10px; background: #f8fafc; padding-top: 4px; padding-bottom: 4px; border-radius: 0 4px 4px 0;">
+            <div style="font-weight: 800; font-size: 11.5px; color: #0f172a; margin-bottom: 2px;">02. Loan Period & Renewal Limits</div>
+            <ul style="margin: 0; padding-left: 16px; list-style-type: disc; color: #334155;">
+              <li>The standard loan period for all textbook copies is <strong>fifteen (15) days</strong>.</li>
+              <li>A book must be returned or renewed on or before the due date.</li>
+              <li>A single issue transaction can be renewed for a maximum of <strong>three (3) consecutive cycles</strong>.</li>
+              <li>Upon reaching the 3rd renewal limit, the book must be returned to the library counter before it can be re-issued.</li>
+            </ul>
+          </div>
+
+          <div style="border-left: 3px solid #0d9488; padding-left: 10px; background: #f8fafc; padding-top: 4px; padding-bottom: 4px; border-radius: 0 4px 4px 0;">
+            <div style="font-weight: 800; font-size: 11.5px; color: #0f172a; margin-bottom: 2px;">03. Late Returns & Overdue Penalties</div>
+            <ul style="margin: 0; padding-left: 16px; list-style-type: disc; color: #334155;">
+              <li>Any student failing to return or renew a book after the <strong>15-day period</strong> will incur an overdue penalty.</li>
+              <li>The overdue penalty is set at a flat rate of <strong>₹10 per day</strong> for each overdue day.</li>
+              <li>Fines accumulate automatically in the system and must be paid in full or waived by authorized personnel prior to clearance.</li>
+            </ul>
+          </div>
+
+          <div style="border-left: 3px solid #0d9488; padding-left: 10px; background: #f8fafc; padding-top: 4px; padding-bottom: 4px; border-radius: 0 4px 4px 0;">
+            <div style="font-weight: 800; font-size: 11.5px; color: #0f172a; margin-bottom: 2px;">04. Care of Library Assets</div>
+            <ul style="margin: 0; padding-left: 16px; list-style-type: disc; color: #334155;">
+              <li>Mutilation, underlining, highlighting, or tearing pages of books is strictly forbidden.</li>
+              <li>In the event of total loss or structural damage, the borrower is liable to replace the volume or pay double the list price.</li>
+              <li>Academic journals and reference periodicals are strictly for in-library reading and cannot be checked out.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px; padding-top: 6px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; font-size: 10px; color: #475569;">
+          <span><strong>Approved By:</strong> Principal, J & D Institute of Nursing</span>
+          <span><strong>Effective Date:</strong> Academic Session 2026–2027</span>
+        </div>
+      </div>
+    `;
+
     window.print();
   });
 }
@@ -1815,19 +1901,134 @@ window.openDirectFineSettle = function(transactionId, amount) {
 // ==========================================
 // 6. BOOK INVENTORY MODULE
 // ==========================================
+let masterCategoriesPopulated = false;
+
+async function populateMasterBookCategories(forceReload = false) {
+  if (masterCategoriesPopulated && !forceReload) return;
+
+  try {
+    const res = await fetch('/api/books/categories-summary');
+    const categories = await res.json();
+
+    const dropdown = document.getElementById('books-category-filter');
+    const chipsContainer = document.getElementById('books-category-chips');
+    const currentVal = dropdown?.value || 'all';
+
+    let totalBooks = 0;
+    categories.forEach(c => { totalBooks += parseInt(c.count, 10); });
+
+    if (dropdown) {
+      dropdown.innerHTML = '';
+      const allOpt = document.createElement('option');
+      allOpt.value = 'all';
+      allOpt.innerText = `All Categories / Specialties (${totalBooks.toLocaleString()})`;
+      dropdown.appendChild(allOpt);
+
+      categories.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.specialty;
+        opt.innerText = `${c.specialty} (${parseInt(c.count, 10).toLocaleString()})`;
+        dropdown.appendChild(opt);
+      });
+
+      if (currentVal && categories.some(c => c.specialty === currentVal)) {
+        dropdown.value = currentVal;
+      } else {
+        dropdown.value = 'all';
+      }
+    }
+
+    if (chipsContainer) {
+      chipsContainer.innerHTML = '';
+
+      // "All" chip
+      const allChip = document.createElement('button');
+      allChip.type = 'button';
+      allChip.className = `category-chip px-3 py-1 rounded-lg transition-all whitespace-nowrap text-xs shrink-0 ${
+        (dropdown?.value || 'all') === 'all'
+          ? 'bg-teal-600 text-white font-bold shadow-md shadow-teal-600/30 ring-1 ring-teal-400'
+          : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'
+      }`;
+      allChip.innerHTML = `All <span class="opacity-75 font-mono text-[10px]">(${totalBooks.toLocaleString()})</span>`;
+      allChip.addEventListener('click', () => {
+        if (dropdown) dropdown.value = 'all';
+        updateActiveCategoryChip('all');
+        loadBooks();
+      });
+      chipsContainer.appendChild(allChip);
+
+      // Add chips for categories
+      categories.forEach(c => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.dataset.specialty = c.specialty;
+        const isActive = dropdown?.value === c.specialty;
+        chip.className = `category-chip px-3 py-1 rounded-lg transition-all whitespace-nowrap text-xs shrink-0 ${
+          isActive
+            ? 'bg-teal-600 text-white font-bold shadow-md shadow-teal-600/30 ring-1 ring-teal-400'
+            : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'
+        }`;
+        chip.innerHTML = `${c.specialty} <span class="opacity-75 font-mono text-[10px]">(${parseInt(c.count, 10).toLocaleString()})</span>`;
+        chip.addEventListener('click', () => {
+          if (dropdown) dropdown.value = c.specialty;
+          updateActiveCategoryChip(c.specialty);
+          loadBooks();
+        });
+        chipsContainer.appendChild(chip);
+      });
+    }
+
+    masterCategoriesPopulated = true;
+  } catch (err) {
+    console.error('Error populating master book categories:', err);
+  }
+}
+
+function updateActiveCategoryChip(selectedSpecialty) {
+  document.querySelectorAll('.category-chip').forEach(chip => {
+    const isAll = chip.textContent.startsWith('All') && selectedSpecialty === 'all';
+    const isMatch = chip.dataset.specialty === selectedSpecialty;
+    if (isAll || isMatch) {
+      chip.className = 'category-chip px-3 py-1 rounded-lg font-bold transition-all whitespace-nowrap text-xs shrink-0 bg-teal-600 text-white shadow-md shadow-teal-600/30 ring-1 ring-teal-400';
+    } else {
+      chip.className = 'category-chip px-3 py-1 rounded-lg font-medium transition-all whitespace-nowrap text-xs shrink-0 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700';
+    }
+  });
+}
+
 async function loadBooks() {
-  const searchVal = document.getElementById('books-search-input').value.trim();
-  const url = `/api/books?search=${encodeURIComponent(searchVal)}`;
+  const searchVal = document.getElementById('books-search-input')?.value.trim() || '';
+  const categoryFilter = document.getElementById('books-category-filter')?.value || 'all';
+
+  const params = new URLSearchParams();
+  if (searchVal) params.append('search', searchVal);
+  if (categoryFilter && categoryFilter !== 'all') params.append('category', categoryFilter);
+
+  const url = `/api/books${params.toString() ? '?' + params.toString() : ''}`;
   
   try {
     const res = await fetch(url);
     const books = await res.json();
     
+    // Update live count summary badge
+    const summaryEl = document.getElementById('books-count-summary');
+    if (summaryEl) {
+      if (categoryFilter !== 'all' && searchVal) {
+        summaryEl.innerHTML = `Found <span class="text-teal-400 font-extrabold">${books.length.toLocaleString()}</span> books in <span class="text-amber-300 font-bold">${categoryFilter}</span> matching "${searchVal}"`;
+      } else if (categoryFilter !== 'all') {
+        summaryEl.innerHTML = `Showing <span class="text-teal-400 font-extrabold">${books.length.toLocaleString()}</span> books in <span class="text-amber-300 font-bold">${categoryFilter}</span>`;
+      } else if (searchVal) {
+        summaryEl.innerHTML = `Found <span class="text-teal-400 font-extrabold">${books.length.toLocaleString()}</span> books matching "${searchVal}"`;
+      } else {
+        summaryEl.innerHTML = `Total Master Catalog: <span class="text-teal-400 font-extrabold">${books.length.toLocaleString()}</span> Books`;
+      }
+    }
+
     const tbody = document.getElementById('books-table-body');
     tbody.innerHTML = '';
     
     if (books.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-xs text-slate-500 font-semibold">No books found in master catalog matching query.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-xs text-slate-500 font-semibold">No books found in master catalog matching query.</td></tr>';
       return;
     }
     
@@ -1955,7 +2156,7 @@ async function loadSpecialtyDropdown(selectedVal = '') {
       "Nutrition & Biochemistry"
     ];
 
-    const uniqueSpecs = Array.from(new Set([...defaults, ...dbSpecs]));
+    const uniqueSpecs = Array.from(new Set([...defaults, ...dbSpecs])).filter(s => s && s.trim() !== '').sort((a, b) => a.localeCompare(b));
 
     const dropdown = document.getElementById('new-book-specialty');
     dropdown.innerHTML = '';
