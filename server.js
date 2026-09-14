@@ -284,18 +284,26 @@ app.get('/api/students/:id', async (req, res) => {
 
 app.post('/api/students', async (req, res) => {
   const { name, enrollment_no, course, division, academic_year_id, mobile, status } = req.body;
-  if (!name || !enrollment_no || !course || !division || !academic_year_id || !mobile) {
-    return res.status(400).json({ error: 'All fields are required' });
+  if (!name || !enrollment_no || !course || !mobile) {
+    return res.status(400).json({ error: 'Name, Enrollment Number, Course, and Mobile are required' });
   }
-  if (mobile.length !== 10) {
+  const mobileClean = String(mobile).replace(/\D/g, '').trim();
+  if (mobileClean.length !== 10) {
     return res.status(400).json({ error: 'Mobile number must be exactly 10 digits' });
   }
+
+  let targetYearId = academic_year_id;
+  if (!targetYearId) {
+    const activeYear = await get("SELECT id FROM academic_years WHERE status = 'active' LIMIT 1");
+    targetYearId = activeYear ? activeYear.id : 6;
+  }
+
   try {
     const result = await run(
       'INSERT INTO students (name, enrollment_no, course, division, academic_year_id, mobile, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, enrollment_no, course, division, academic_year_id, mobile, status || 'Active']
+      [name.trim(), enrollment_no.trim(), course.trim(), (division || '-').trim(), targetYearId, mobileClean, status || 'Active']
     );
-    res.status(201).json({ id: result.lastID, name, enrollment_no });
+    res.status(201).json({ id: result.lastID, name: name.trim(), enrollment_no: enrollment_no.trim() });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -304,8 +312,14 @@ app.post('/api/students', async (req, res) => {
 // Bulk student upload
 app.post('/api/students/bulk', async (req, res) => {
   const { students, academic_year_id, overwrite } = req.body;
-  if (!students || !Array.isArray(students) || !academic_year_id) {
-    return res.status(400).json({ error: 'Invalid payload: students list and academic_year_id required' });
+  if (!students || !Array.isArray(students)) {
+    return res.status(400).json({ error: 'Invalid payload: students list required' });
+  }
+
+  let targetYearId = academic_year_id;
+  if (!targetYearId) {
+    const activeYear = await get("SELECT id FROM academic_years WHERE status = 'active' LIMIT 1");
+    targetYearId = activeYear ? activeYear.id : 6;
   }
 
   try {
@@ -317,8 +331,8 @@ app.post('/api/students/bulk', async (req, res) => {
     for (let index = 0; index < students.length; index++) {
       const s = students[index];
       // Basic validation
-      if (!s.name || !s.enrollment_no || !s.course || !s.division || !s.mobile) {
-        errors.push(`Row ${index + 1}: Missing required fields`);
+      if (!s.name || !s.enrollment_no || !s.course || !s.mobile) {
+        errors.push(`Row ${index + 1}: Missing required fields (Name, Enrollment No, Course, Mobile)`);
         continue;
       }
       const mobileClean = String(s.mobile).replace(/\D/g, '').trim();
@@ -327,18 +341,20 @@ app.post('/api/students/bulk', async (req, res) => {
         continue;
       }
 
+      const divVal = (s.division || '-').trim();
+
       try {
         const existing = await get('SELECT id FROM students WHERE enrollment_no = ?', [s.enrollment_no.trim()]);
         if (existing && overwrite) {
           await run(
             'UPDATE students SET name = ?, course = ?, division = ?, mobile = ?, status = ? WHERE id = ?',
-            [s.name.trim(), s.course.trim(), s.division.trim(), mobileClean, s.status || 'Active', existing.id]
+            [s.name.trim(), s.course.trim(), divVal, mobileClean, s.status || 'Active', existing.id]
           );
           updated.push(s.enrollment_no);
         } else {
           await run(
             'INSERT INTO students (name, enrollment_no, course, division, academic_year_id, mobile, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [s.name.trim(), s.enrollment_no.trim(), s.course.trim(), s.division.trim(), academic_year_id, mobileClean, s.status || 'Active']
+            [s.name.trim(), s.enrollment_no.trim(), s.course.trim(), divVal, targetYearId, mobileClean, s.status || 'Active']
           );
           inserted.push(s.enrollment_no);
         }
@@ -474,8 +490,8 @@ app.put('/api/students/:id', async (req, res) => {
   const { id } = req.params;
   const { name, enrollment_no, course, division, mobile, status } = req.body;
   
-  if (!name || !enrollment_no || !course || !division || !mobile) {
-    return res.status(400).json({ error: 'All fields are required' });
+  if (!name || !enrollment_no || !course || !mobile) {
+    return res.status(400).json({ error: 'Name, Enrollment Number, Course, and Mobile are required' });
   }
   const mobileClean = String(mobile).replace(/\D/g, '').trim();
   if (mobileClean.length !== 10) {
@@ -485,7 +501,7 @@ app.put('/api/students/:id', async (req, res) => {
   try {
     const result = await run(
       'UPDATE students SET name = ?, enrollment_no = ?, course = ?, division = ?, mobile = ?, status = ? WHERE id = ?',
-      [name.trim(), enrollment_no.trim(), course.trim(), division.trim(), mobileClean, status || 'Active', id]
+      [name.trim(), enrollment_no.trim(), course.trim(), (division || '-').trim(), mobileClean, status || 'Active', id]
     );
     if (result.changes === 0) return res.status(404).json({ error: 'Student not found.' });
     res.json({ message: 'Student profile updated successfully.' });

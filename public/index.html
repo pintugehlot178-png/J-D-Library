@@ -448,7 +448,6 @@
                     <th class="px-6 py-4">Enrollment ID</th>
                     <th class="px-6 py-4">Student Name</th>
                     <th class="px-6 py-4">Course</th>
-                    <th class="px-6 py-4">Div / Batch</th>
                     <th class="px-6 py-4">Mobile</th>
                     <th class="px-6 py-4">Status</th>
                     <th class="px-6 py-4 text-right">Actions</th>
@@ -1076,26 +1075,21 @@ JD-LIB-0009,Nursing Research,Suresh K. Sharma,2nd,Jaypee,2018,9789352701111,Medi
               <option value="Post Basic B.Sc.">Post Basic B.Sc.</option>
               <option value="M.Sc. Nursing">M.Sc. Nursing</option>
             </select>
+            <input type="hidden" id="new-student-division" value="-">
           </div>
           <div class="space-y-1">
-            <label class="block text-slate-400 font-bold uppercase">Division / Section</label>
-            <input type="text" id="new-student-division" required placeholder="e.g. Division A, Batch 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+            <label class="block text-slate-400 font-bold uppercase">Mobile Number (10 digits)</label>
+            <input type="text" id="new-student-mobile" required pattern="[0-9]{10}" placeholder="10-digit mobile number" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-          <div class="space-y-1">
-            <label class="block text-slate-400 font-bold uppercase">Mobile Number (10 digits)</label>
-            <input type="text" id="new-student-mobile" required pattern="[0-9]{10}" placeholder="Mandatory contact number" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
-          </div>
-          <div class="space-y-1">
-            <label class="block text-slate-400 font-bold uppercase">Initial Status</label>
-            <select id="new-student-status" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
-              <option value="Active">Active</option>
-              <option value="On Hold">On Hold</option>
-              <option value="Graduated">Graduated</option>
-            </select>
-          </div>
+        <div class="space-y-1">
+          <label class="block text-slate-400 font-bold uppercase">Initial Status</label>
+          <select id="new-student-status" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500">
+            <option value="Active">Active</option>
+            <option value="On Hold">On Hold</option>
+            <option value="Graduated">Graduated</option>
+          </select>
         </div>
 
         <button type="submit" id="btn-submit-student" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-all">Submit Registration</button>

@@ -413,6 +413,8 @@ async function loadAcademicYears() {
       });
       if (prevVal && (prevVal === 'all' || academicYears.some(y => String(y.id) === String(prevVal)))) {
         studentSessionDropdown.value = prevVal;
+      } else {
+        studentSessionDropdown.value = 'all';
       }
     }
   } catch (err) {
@@ -513,8 +515,8 @@ function setupEventListeners() {
     }
     
     try {
-      // Find students in current academic year
-      const res = await fetch(`/api/students?academic_year_id=${currentAcademicYearId}&search=${encodeURIComponent(val)}`);
+      // Find students across all records
+      const res = await fetch(`/api/students?search=${encodeURIComponent(val)}`);
       const students = await res.json();
       
       if (students.length === 0) {
@@ -530,7 +532,7 @@ function setupEventListeners() {
         item.innerHTML = `
           <div>
             <strong class="text-white block">${s.name}</strong>
-            <span class="text-slate-400">${s.course} (${s.division})</span>
+            <span class="text-slate-400">${s.course}</span>
           </div>
           <div class="text-right">
             <span class="text-slate-500 font-mono text-[10px] block">${s.enrollment_no}</span>
@@ -1514,7 +1516,7 @@ function selectStudentForIssue(student) {
   
   // Show select card
   document.getElementById('sel-student-name').innerText = student.name;
-  document.getElementById('sel-student-meta').innerText = `${student.course} | ${student.division} | Enrollment: ${student.enrollment_no}`;
+  document.getElementById('sel-student-meta').innerText = `${student.course} | Enrollment: ${student.enrollment_no}`;
   document.getElementById('sel-student-mobile').innerText = `Mob: ${student.mobile}`;
   
   // Fetch active borrowing count to enforce max 3 books
@@ -1726,7 +1728,7 @@ async function loadStudents() {
     tbody.innerHTML = '';
     
     if (!students || students.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-xs text-slate-500 font-semibold">No students found matching your filters. Try selecting "All Sessions" or switching academic session.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-xs text-slate-500 font-semibold">No students found matching your filters. Try selecting "All Sessions" or clearing search.</td></tr>';
       return;
     }
     
@@ -1736,12 +1738,10 @@ async function loadStudents() {
       tr.innerHTML = `
         <td class="px-6 py-4 font-mono text-xs font-bold text-teal-400">${s.enrollment_no}</td>
         <td class="px-6 py-4 font-bold text-white">${s.name}</td>
-        <td class="px-6 py-4 text-xs font-semibold">
+        <td class="px-6 py-4 text-xs font-semibold text-slate-300">
           <div>${s.course}</div>
-          <span class="text-[10px] text-teal-400/80 font-mono">${s.academic_year_name || ''}</span>
         </td>
-        <td class="px-6 py-4 text-xs text-slate-400">${s.division}</td>
-        <td class="px-6 py-4 text-xs text-slate-400 font-mono">${s.mobile}</td>
+        <td class="px-6 py-4 text-xs text-slate-300 font-mono">${s.mobile}</td>
         <td class="px-6 py-4 text-xs">
           <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${s.status === 'Active' ? 'bg-emerald-950 text-emerald-400 border border-emerald-900/60' : s.status === 'On Hold' ? 'bg-amber-950 text-amber-400 border border-amber-900/60' : 'bg-slate-800 text-slate-400 border border-slate-700/60'}">
             ${s.status}
