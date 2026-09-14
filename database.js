@@ -1,7 +1,7 @@
 require('dotenv').config();
 const path = require('path');
 
-const isPostgres = Boolean(process.env.DATABASE_URL);
+const isPostgres = process.env.NODE_ENV !== 'test' && Boolean(process.env.DATABASE_URL);
 
 let db = null;
 let run, get, all, exec, initSchema;

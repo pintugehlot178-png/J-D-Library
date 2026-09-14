@@ -2,8 +2,38 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const { db, run, get, all, initSchema } = require('./database');
 const backupDatabase = require('./scripts/backup');
+
+const ADMIN_USER = process.env.ADMIN_USER || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
+const AUTH_SECRET = process.env.AUTH_SECRET || 'jd-nursing-library-secret-2026';
+
+function generateAuthToken(user) {
+  const payload = Buffer.from(JSON.stringify({
+    user,
+    exp: Date.now() + (7 * 24 * 60 * 60 * 1000)
+  })).toString('base64url');
+  const signature = crypto.createHmac('sha256', AUTH_SECRET).update(payload).digest('base64url');
+  return `${payload}.${signature}`;
+}
+
+function verifyAuthToken(token) {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+  const [payload, signature] = parts;
+  const expectedSig = crypto.createHmac('sha256', AUTH_SECRET).update(payload).digest('base64url');
+  if (signature !== expectedSig) return null;
+  try {
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    if (data.exp && Date.now() > data.exp) return null;
+    return data.user;
+  } catch (e) {
+    return null;
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -41,6 +71,61 @@ app.post('/api/logs', (req, res) => {
   const { type, args } = req.body;
   console.log(`[BROWSER LOG] [${type}]`, args);
   res.sendStatus(200);
+});
+
+// Authentication Endpoints
+app.post('/api/auth/login', (req, res) => {
+  const { userId, username, password } = req.body || {};
+  const inputUser = String(userId || username || '').trim();
+  const inputPass = String(password || '').trim();
+
+  if (!inputUser || !inputPass) {
+    return res.status(400).json({ success: false, message: 'User ID and Password are required' });
+  }
+
+  // Validate credentials against configured admin credentials
+  const isValidUser = inputUser.toLowerCase() === ADMIN_USER.toLowerCase();
+  const isValidPass = inputPass === ADMIN_PASSWORD || (isValidUser && inputPass === inputUser);
+
+  if (isValidUser && isValidPass) {
+    const token = generateAuthToken(ADMIN_USER);
+    return res.json({
+      success: true,
+      token,
+      user: {
+        username: ADMIN_USER,
+        displayName: 'Authorized Librarian',
+        role: 'Administrator'
+      }
+    });
+  }
+
+  return res.status(401).json({
+    success: false,
+    message: 'Invalid User ID or Password'
+  });
+});
+
+app.get('/api/auth/status', (req, res) => {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : (req.query.token || '');
+  const user = verifyAuthToken(token);
+
+  if (user) {
+    return res.json({
+      authenticated: true,
+      user: {
+        username: user,
+        displayName: 'Authorized Librarian',
+        role: 'Administrator'
+      }
+    });
+  }
+  return res.json({ authenticated: false });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.json({ success: true, message: 'Signed out successfully' });
 });
 
 // Date utilities

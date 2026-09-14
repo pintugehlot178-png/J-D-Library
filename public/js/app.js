@@ -17,6 +17,206 @@ document.addEventListener('DOMContentLoaded', () => {
   initApp();
 });
 
+// Automatically attach Bearer auth token to all /api/ requests
+const _nativeFetch = window.fetch;
+window.fetch = function(url, options = {}) {
+  const token = localStorage.getItem('jd_library_auth_token') || sessionStorage.getItem('jd_library_auth_token');
+  if (token && typeof url === 'string' && url.startsWith('/api/') && !url.startsWith('/api/auth/login')) {
+    options = options || {};
+    options.headers = options.headers || {};
+    if (options.headers instanceof Headers) {
+      if (!options.headers.has('Authorization')) {
+        options.headers.set('Authorization', `Bearer ${token}`);
+      }
+    } else if (Array.isArray(options.headers)) {
+      options.headers.push(['Authorization', `Bearer ${token}`]);
+    } else {
+      if (!options.headers['Authorization']) {
+        options.headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
+  }
+  return _nativeFetch(url, options);
+};
+
+let isPortalDataLoaded = false;
+
+async function checkAuthStatus() {
+  const token = localStorage.getItem('jd_library_auth_token') || sessionStorage.getItem('jd_library_auth_token');
+  if (!token) return false;
+
+  try {
+    const res = await _nativeFetch('/api/auth/status', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      localStorage.removeItem('jd_library_auth_token');
+      sessionStorage.removeItem('jd_library_auth_token');
+      return false;
+    }
+    const data = await res.json();
+    if (data && data.authenticated) {
+      const displayName = data.user?.displayName || data.user?.username || 'Admin';
+      const userDisplayEl = document.getElementById('user-display-name');
+      if (userDisplayEl) userDisplayEl.textContent = displayName;
+      return true;
+    }
+    localStorage.removeItem('jd_library_auth_token');
+    sessionStorage.removeItem('jd_library_auth_token');
+    return false;
+  } catch (err) {
+    console.error('Error checking auth status:', err);
+    return false;
+  }
+}
+
+async function unlockMainPortal() {
+  const loginView = document.getElementById('login-view');
+  const mainLayout = document.getElementById('main-layout');
+  const userBadge = document.getElementById('user-badge');
+
+  if (loginView) loginView.classList.add('hidden');
+  if (mainLayout) mainLayout.classList.remove('hidden');
+  if (userBadge) userBadge.classList.remove('hidden');
+
+  if (!isPortalDataLoaded) {
+    await loadAcademicYears();
+    const today = new Date();
+    const deskDateEl = document.getElementById('desk-current-date');
+    if (deskDateEl) {
+      deskDateEl.innerText = `Date: ${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    }
+    updateIssueDates();
+    switchTab('circulation');
+    isPortalDataLoaded = true;
+  }
+}
+
+function lockMainPortal() {
+  const loginView = document.getElementById('login-view');
+  const mainLayout = document.getElementById('main-layout');
+  const userBadge = document.getElementById('user-badge');
+
+  if (mainLayout) mainLayout.classList.add('hidden');
+  if (loginView) loginView.classList.remove('hidden');
+  if (userBadge) userBadge.classList.add('hidden');
+
+  const errorEl = document.getElementById('login-error');
+  if (errorEl) errorEl.classList.add('hidden');
+
+  const passwordInput = document.getElementById('login-password');
+  if (passwordInput) passwordInput.value = '';
+
+  const userIdInput = document.getElementById('login-userid');
+  if (userIdInput) {
+    userIdInput.focus();
+  }
+}
+
+function setupAuth() {
+  const loginForm = document.getElementById('login-form');
+  const loginError = document.getElementById('login-error');
+  const loginErrorMsg = document.getElementById('login-error-msg');
+  const submitBtn = document.getElementById('btn-login-submit');
+  const btnText = document.getElementById('btn-login-text');
+  const btnSpinner = document.getElementById('btn-login-spinner');
+  const togglePassBtn = document.getElementById('btn-toggle-password');
+  const passwordInput = document.getElementById('login-password');
+  const eyeShow = document.getElementById('eye-icon-show');
+  const eyeHide = document.getElementById('eye-icon-hide');
+  const logoutBtn = document.getElementById('btn-logout');
+
+  // Show/Hide Password
+  if (togglePassBtn && passwordInput) {
+    togglePassBtn.addEventListener('click', () => {
+      const isPassword = passwordInput.type === 'password';
+      passwordInput.type = isPassword ? 'text' : 'password';
+      if (eyeShow) eyeShow.classList.toggle('hidden', isPassword);
+      if (eyeHide) eyeHide.classList.toggle('hidden', !isPassword);
+    });
+  }
+
+  // Handle Login Submission
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userId = (document.getElementById('login-userid')?.value || '').trim();
+      const password = (document.getElementById('login-password')?.value || '').trim();
+
+      if (!userId || !password) {
+        if (loginError) {
+          loginError.classList.remove('hidden');
+          if (loginErrorMsg) loginErrorMsg.textContent = 'Please enter both User ID and Password.';
+        }
+        return;
+      }
+
+      // Show loading spinner
+      if (submitBtn) submitBtn.disabled = true;
+      if (btnSpinner) btnSpinner.classList.remove('hidden');
+      if (btnText) btnText.textContent = 'Verifying Credentials...';
+      if (loginError) loginError.classList.add('hidden');
+
+      try {
+        const res = await _nativeFetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          localStorage.setItem('jd_library_auth_token', data.token);
+          const userDisplayEl = document.getElementById('user-display-name');
+          if (userDisplayEl && data.user) {
+            userDisplayEl.textContent = data.user.displayName || data.user.username;
+          }
+          await unlockMainPortal();
+        } else {
+          if (loginError) {
+            loginError.classList.remove('hidden');
+            if (loginErrorMsg) loginErrorMsg.textContent = data.message || 'Invalid User ID or Password. Please try again.';
+          }
+          if (passwordInput) {
+            passwordInput.value = '';
+            passwordInput.focus();
+          }
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        if (loginError) {
+          loginError.classList.remove('hidden');
+          if (loginErrorMsg) loginErrorMsg.textContent = 'Unable to connect to server. Please try again.';
+        }
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+        if (btnSpinner) btnSpinner.classList.add('hidden');
+        if (btnText) btnText.textContent = 'Sign In to Library Portal';
+      }
+    });
+  }
+
+  // Handle Logout
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      const confirmLogout = confirm('Are you sure you want to log out of the Library Portal?');
+      if (!confirmLogout) return;
+
+      localStorage.removeItem('jd_library_auth_token');
+      sessionStorage.removeItem('jd_library_auth_token');
+
+      try {
+        await _nativeFetch('/api/auth/logout', { method: 'POST' });
+      } catch (err) {
+        // ignore logout network errors
+      }
+
+      lockMainPortal();
+    });
+  }
+}
+
 // ==========================================
 // 1. APP SETUP & NAV
 // ==========================================
@@ -24,19 +224,14 @@ async function initApp() {
   setupTheme();
   setupNavigation();
   setupEventListeners();
-  
-  // Load initial global data
-  await loadAcademicYears();
-  
-  // Default date in circulation desk
-  const today = new Date();
-  document.getElementById('desk-current-date').innerText = `Date: ${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  
-  // Set default state for Issue dates
-  updateIssueDates();
+  setupAuth();
 
-  // Load active tab
-  switchTab('circulation');
+  const isAuthenticated = await checkAuthStatus();
+  if (isAuthenticated) {
+    unlockMainPortal();
+  } else {
+    lockMainPortal();
+  }
 }
 
 function setupTheme() {

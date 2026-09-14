@@ -222,6 +222,40 @@ test('Integration Test Suite - Library Management System', async (t) => {
     assert.ok(fs.existsSync(backupData.path), 'Backup database file should physically exist');
   });
 
+  await t.test('8. Secure Login & Session Authentication', async () => {
+    // 1. Invalid credentials should fail
+    const resBad = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: 'wronguser', password: 'badpassword' })
+    });
+    assert.equal(resBad.status, 401, 'Invalid login should return 401');
+
+    // 2. Valid login should succeed and return token
+    const resGood = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: 'admin', password: 'admin' })
+    });
+    assert.equal(resGood.status, 200, 'Valid login should return 200');
+    const goodData = await resGood.json();
+    assert.equal(goodData.success, true, 'Login should succeed');
+    assert.ok(goodData.token, 'Session token should be returned');
+
+    // 3. Verify status with valid token
+    const resStatus = await fetch(`${BASE_URL}/auth/status`, {
+      headers: { 'Authorization': `Bearer ${goodData.token}` }
+    });
+    assert.equal(resStatus.status, 200, 'Auth status endpoint should return 200');
+    const statusData = await resStatus.json();
+    assert.equal(statusData.authenticated, true, 'User should be authenticated');
+
+    // 4. Verify unauthenticated status
+    const resUnauth = await fetch(`${BASE_URL}/auth/status`);
+    const unauthData = await resUnauth.json();
+    assert.equal(unauthData.authenticated, false, 'Should report unauthenticated without token');
+  });
+
   // Teardown server listener so the test runner can exit cleanly
   appInstance.close();
 });
