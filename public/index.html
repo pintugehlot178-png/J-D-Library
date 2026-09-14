@@ -416,12 +416,26 @@
           </div>
 
           <!-- Directory Search Filters -->
-          <div class="bg-slate-800/40 border border-slate-800 rounded-2xl p-4 flex gap-4">
+          <div class="bg-slate-800/40 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row gap-3">
             <div class="flex-grow relative">
               <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
               </span>
               <input type="text" id="students-search-input" placeholder="Search by Name, Enrollment Number, or Mobile Number..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-slate-500">
+            </div>
+
+            <!-- Session Filter Dropdown -->
+            <div class="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 shrink-0">
+              <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+              <span class="text-xs text-slate-400 font-medium whitespace-nowrap">Session:</span>
+              <select id="students-session-filter" class="bg-transparent text-xs font-bold text-teal-400 focus:outline-none cursor-pointer">
+                <option value="all" class="bg-slate-800 text-white">All Sessions (All Students)</option>
+              </select>
+            </div>
+
+            <!-- Student Count Badge -->
+            <div class="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-400 font-semibold flex items-center justify-center shrink-0">
+              <span id="students-total-count" class="text-teal-400 font-bold mr-1">0</span> Students Found
             </div>
           </div>
 
@@ -459,6 +473,10 @@
             </div>
             
             <div class="flex gap-2">
+              <button id="btn-inventory-reports" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-teal-400 hover:text-teal-300 px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all" title="View Reports, Accession Register & Book Labels">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Print Reports & Labels
+              </button>
               <button id="btn-import-books-modal" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                 Bulk Import CSV

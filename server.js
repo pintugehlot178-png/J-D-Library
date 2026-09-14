@@ -193,9 +193,9 @@ app.get('/api/students', async (req, res) => {
   const params = [];
   const whereClauses = [];
 
-  if (academic_year_id) {
+  if (academic_year_id && academic_year_id !== 'all') {
     whereClauses.push('s.academic_year_id = ?');
-    params.push(academic_year_id);
+    params.push(parseInt(academic_year_id, 10));
   }
 
   if (search) {

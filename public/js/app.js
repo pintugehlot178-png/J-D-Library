@@ -396,6 +396,25 @@ async function loadAcademicYears() {
         reportDropdown.appendChild(option);
       });
     }
+
+    const studentSessionDropdown = document.getElementById('students-session-filter');
+    if (studentSessionDropdown) {
+      const prevVal = studentSessionDropdown.value;
+      studentSessionDropdown.innerHTML = '<option value="all" class="bg-slate-800 text-white">All Sessions (All Students)</option>';
+      academicYears.forEach(ay => {
+        const option = document.createElement('option');
+        option.value = ay.id;
+        option.innerText = ay.name + (ay.status === 'active' ? ' (Active)' : '');
+        option.className = 'bg-slate-800 text-white';
+        if (ay.id === currentAcademicYearId) {
+          option.selected = true;
+        }
+        studentSessionDropdown.appendChild(option);
+      });
+      if (prevVal && (prevVal === 'all' || academicYears.some(y => String(y.id) === String(prevVal)))) {
+        studentSessionDropdown.value = prevVal;
+      }
+    }
   } catch (err) {
     showNotification('Error loading academic sessions: ' + err.message, 'error');
   }
@@ -413,8 +432,18 @@ function setupEventListeners() {
   // Global Academic Year Selector Switch
   document.getElementById('global-academic-year').addEventListener('change', (e) => {
     currentAcademicYearId = parseInt(e.target.value);
+    const studentSessionFilter = document.getElementById('students-session-filter');
+    if (studentSessionFilter) {
+      studentSessionFilter.value = currentAcademicYearId;
+    }
     setActiveAcademicYear(currentAcademicYearId);
   });
+
+  // Inventory Quick Button to Reports
+  const btnInventoryReports = document.getElementById('btn-inventory-reports');
+  if (btnInventoryReports) {
+    btnInventoryReports.addEventListener('click', () => switchTab('reports'));
+  }
 
   // Open Create Academic Year Modal
   document.getElementById('btn-new-ay').addEventListener('click', () => {
@@ -820,6 +849,13 @@ function setupEventListeners() {
   document.getElementById('students-search-input').addEventListener('input', () => {
     loadStudents();
   });
+
+  const studentSessionFilter = document.getElementById('students-session-filter');
+  if (studentSessionFilter) {
+    studentSessionFilter.addEventListener('change', () => {
+      loadStudents();
+    });
+  }
 
   document.getElementById('btn-new-student-modal').addEventListener('click', () => {
     document.getElementById('form-new-student').reset();
@@ -1675,17 +1711,22 @@ async function processReturn(accessionNo, action, notes = '') {
 // ==========================================
 async function loadStudents() {
   const searchVal = document.getElementById('students-search-input').value.trim();
-  const url = `/api/students?academic_year_id=${currentAcademicYearId}&search=${encodeURIComponent(searchVal)}`;
+  const sessionFilterEl = document.getElementById('students-session-filter');
+  const sessionVal = sessionFilterEl ? sessionFilterEl.value : (currentAcademicYearId || 'all');
+  const url = `/api/students?academic_year_id=${encodeURIComponent(sessionVal)}&search=${encodeURIComponent(searchVal)}`;
   
   try {
     const res = await fetch(url);
     const students = await res.json();
     
+    const countEl = document.getElementById('students-total-count');
+    if (countEl) countEl.innerText = Array.isArray(students) ? students.length : 0;
+    
     const tbody = document.getElementById('students-table-body');
     tbody.innerHTML = '';
     
-    if (students.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-xs text-slate-500 font-semibold">No students found matching your filters.</td></tr>';
+    if (!students || students.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-xs text-slate-500 font-semibold">No students found matching your filters. Try selecting "All Sessions" or switching academic session.</td></tr>';
       return;
     }
     
@@ -1695,7 +1736,10 @@ async function loadStudents() {
       tr.innerHTML = `
         <td class="px-6 py-4 font-mono text-xs font-bold text-teal-400">${s.enrollment_no}</td>
         <td class="px-6 py-4 font-bold text-white">${s.name}</td>
-        <td class="px-6 py-4 text-xs font-semibold">${s.course}</td>
+        <td class="px-6 py-4 text-xs font-semibold">
+          <div>${s.course}</div>
+          <span class="text-[10px] text-teal-400/80 font-mono">${s.academic_year_name || ''}</span>
+        </td>
         <td class="px-6 py-4 text-xs text-slate-400">${s.division}</td>
         <td class="px-6 py-4 text-xs text-slate-400 font-mono">${s.mobile}</td>
         <td class="px-6 py-4 text-xs">
